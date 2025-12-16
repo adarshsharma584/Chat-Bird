@@ -58,7 +58,7 @@ function MessageContainer() {
 
   const handleInputChange = (e) => {
     setNewMessage(e.target.value);
-    if (socket && selectedChat) {
+    if (socket && selectedChat && selectedChat._id !== "ai") {
       socket.emit("typing", {
         senderId: userProfile._id,
         receiverId: selectedChat._id,
@@ -76,9 +76,20 @@ function MessageContainer() {
         message: newMessage,
       };
 
+      if (selectedChat._id === "ai") {
+        const userMessageObj = {
+          _id: `temp-${Date.now()}`,
+          senderId: userProfile._id,
+          receiverId: "ai",
+          message: newMessage,
+          createdAt: new Date(),
+        };
+        dispatch(addMessage(userMessageObj));
+      }
+
       const result = await dispatch(sendMessageThunk(messagePayload)).unwrap();
 
-      if (socket) {
+      if (socket && selectedChat._id !== "ai") {
         socket.emit("sendMessage", {
           senderId: userProfile._id,
           receiverId: selectedChat._id,
@@ -136,6 +147,18 @@ function MessageContainer() {
               )
             ) : (
               <div className="text-center text-gray-500">No messages yet</div>
+            )}
+            {loading && selectedChat?._id === "ai" && (
+              <div className="flex justify-start mb-4">
+                <div className="bg-gray-200 dark:bg-gray-700 rounded-lg px-4 py-2 rounded-bl-none max-w-[70%]">
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500"></div>
+                    <span className="text-sm text-gray-500">
+                      AI is thinking...
+                    </span>
+                  </div>
+                </div>
+              </div>
             )}
             <div ref={messagesEndRef} />
           </div>

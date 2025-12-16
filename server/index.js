@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import userRouter from "./routes/user.route.js";
 import messageRouter from "./routes/message.route.js";
+import aiRouter from "./routes/ai.route.js";
 import cors from "cors";
 
 dotenv.config({ path: "./.env" });
@@ -36,6 +37,7 @@ app.use(
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/messages", messageRouter);
+app.use("/api/v1/ai", aiRouter);
 connectDB();
 
 app.get("/", (req, res) => {

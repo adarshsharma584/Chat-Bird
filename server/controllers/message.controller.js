@@ -2,7 +2,10 @@
 import asyncHandler from "../utils/asyncHandler.util.js";
 import {errorHandler} from "../utils/errorHandler.util.js";
 import Message from "../models/message.model.js";
-import Conversation from "../models/conversation.model.js"
+import Conversation from "../models/conversation.model.js";
+import AIMessage from "../models/aiMessage.model.js";
+import mongoose from "mongoose";
+import { agent } from "../utils/aiSetup.util.js";
 
 const sendMessage = asyncHandler(async (req, res, next) =>
    {
@@ -16,6 +19,51 @@ console.log("Message:", message);
 
   if (!senderId || !receiverId || !message) {
     return next(new errorHandler("Please fill all the fields", 400));
+  }
+
+  if (receiverId === "ai") {
+    try {
+      const response = await agent.invoke({
+        messages: [{ role: "user", content: message }],
+      }, { configurable: { thread_id: senderId } });
+
+      const lastMessage = response.messages[response.messages.length - 1];
+      const aiResponse = lastMessage.content;
+
+      // Store the conversation
+      await AIMessage.create({
+        userId: senderId,
+        userMessage: message,
+        aiResponse,
+      });
+
+      const userMessageObj = {
+        _id: new mongoose.Types.ObjectId(),
+        senderId,
+        receiverId: "ai",
+        message,
+        createdAt: new Date(),
+      };
+
+      const aiMessageObj = {
+        _id: new mongoose.Types.ObjectId(),
+        senderId: "ai",
+        receiverId: senderId,
+        message: aiResponse,
+        createdAt: new Date(),
+      };
+
+      return res
+        .status(201)
+        .json({
+          success: true,
+          message: "Message sent successfully",
+          data: aiMessageObj,
+        });
+    } catch (error) {
+      console.error("AI Error:", error);
+      return next(new errorHandler("Failed to get AI response", 500));
+    }
   }
 
  let conversation = await Conversation.findOne({
@@ -62,6 +110,33 @@ const getMessages = asyncHandler( async(req,res,next)=>{
   if (!myId || !receiverId) {
     return next(new errorHandler("Please provide both user IDs", 400));
   };
+
+  if (receiverId === "ai") {
+    const history = await AIMessage.find({ userId: myId }).sort({ createdAt: 1 });
+
+    const messages = [];
+    history.forEach((item) => {
+      messages.push({
+        _id: item._id + "_user",
+        senderId: myId,
+        receiverId: "ai",
+        message: item.userMessage,
+        createdAt: item.createdAt,
+      });
+      messages.push({
+        _id: item._id + "_ai",
+        senderId: "ai",
+        receiverId: myId,
+        message: item.aiResponse,
+        createdAt: item.createdAt,
+      });
+    });
+
+    return res.status(200).json({
+      success: true,
+      responseData: messages,
+    });
+  }
 
   const conversation = await Conversation.findOne({
     participants: { $all: [myId, receiverId] }

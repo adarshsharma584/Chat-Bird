@@ -30,7 +30,9 @@ const messageSlice = createSlice({
       })
       .addCase(sendMessageThunk.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload?.data) {
+        if (Array.isArray(action.payload?.data)) {
+          state.messages.push(...action.payload.data);
+        } else if (action.payload?.data) {
           state.messages.push(action.payload.data);
         }
       })
