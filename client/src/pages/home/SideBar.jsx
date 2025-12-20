@@ -15,9 +15,10 @@ function SideBar() {
     dispatch(logoutUserThunk());
   };
 
-  const filteredUsers = (otherUsers || []).filter((user) =>
-    user.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = (otherUsers || []).filter((user) => {
+    const name = (user?.username || "").toLowerCase();
+    return name.includes(searchQuery.toLowerCase());
+  });
 
   return (
     <div className="w-80 bg-white/90 backdrop-blur-sm dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-screen">

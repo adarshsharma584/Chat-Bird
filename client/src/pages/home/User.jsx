@@ -22,11 +22,11 @@ function User({ user }) {
     >
       <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center">
         <span className="text-white text-lg font-semibold">
-          {user.username[0].toUpperCase()}
+          {user?.username?.[0]?.toUpperCase() || "?"}
         </span>
       </div>
       <div>
-        <h3 className="font-medium dark:text-white">{user.username}</h3>
+        <h3 className="font-medium dark:text-white">{user?.username || "Unknown"}</h3>
         <p className="text-xs text-gray-500 dark:text-gray-400">Click to chat</p>
       </div>
     </div>
